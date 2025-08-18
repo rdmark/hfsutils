@@ -94,7 +94,7 @@ int Tcl_AppInit(Tcl_Interp *interp)
 
   if (Tcl_Eval(interp, xhfs) == TCL_ERROR)
     {
-      fprintf(stderr, "Error: %s\n", interp->result);
+      fprintf(stderr, "Error: %s\n", Tcl_GetStringResult(interp));
       exit(1);
     }
 

@@ -77,6 +77,39 @@ Tcl_HashTable volumes;	/* set containing mounted volumes (no values) */
 Tcl_HashTable files;	/* mapping of frefs -> vrefs */
 
 /*
+ * NAME:	resultf()
+ * DESCRIPTION:	Fill the interpreter result using a printf-style format specifier
+ * NOTES:       Requires a C99-conforming snprintf implemnetation
+ */
+#if __GNUC__
+static
+void resultf(Tcl_Interp *interp, const char *fmt, ...)
+__attribute__((format(printf, 2, 3)));
+#endif
+static
+void resultf(Tcl_Interp *interp, const char *fmt, ...)
+{
+    char smallbuf[60];
+    int required;
+    va_list ap;
+
+    va_start(ap, fmt);
+    required = vsnprintf(smallbuf, sizeof(smallbuf), fmt, ap) + 1; // returned size does not include trailing NUL
+    va_end(ap);
+    if (required < sizeof(smallbuf)) {
+        Tcl_SetResult(interp, smallbuf, TCL_VOLATILE);
+        return;
+    }
+
+    char *buf = Tcl_Alloc(required);
+    va_start(ap, fmt);
+    vsnprintf(buf, required, fmt, ap);
+    va_end(ap);
+
+    Tcl_SetResult(interp, buf, TCL_DYNAMIC);
+}
+
+/*
  * NAME:	error()
  * DESCRIPTION:	return a Tcl error for an HFS error
  */
@@ -238,7 +271,7 @@ int getdir(Tcl_Interp *interp, volref *vref, const char *path)
       str = direntstr(&ent);
       if (str == 0)
 	{
-	  interp->result = "out of memory";
+	  Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -283,7 +316,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
   switch (argc)
     {
     case 1:
-      interp->result = "missing command";
+      Tcl_SetResult(interp, "missing command", TCL_STATIC);
       return TCL_ERROR;
 
     case 2:
@@ -301,7 +334,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	  if (offset == -1)
 	    return error(interp, 0);
 
-	  sprintf(interp->result, "%lu", offset);
+	  resultf(interp, "%lu", offset);
 	}
       else if (strcmp(argv[1], "stat") == 0)
 	{
@@ -314,7 +347,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	  str = direntstr(&ent);
 	  if (str == 0)
 	    {
-	      interp->result = "out of memory";
+	      Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -322,7 +355,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	}
       else if (strcmp(argv[1], "getfork") == 0)
 	{
-	  interp->result = (hfs_getfork(file) == 0) ? "data" : "rsrc";
+	  Tcl_SetResult(interp, (hfs_getfork(file) == 0) ? "data" : "rsrc", TCL_STATIC);
 	}
       else
 	{
@@ -345,7 +378,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	    fork = 1;
 	  else
 	    {
-	      interp->result = "bad arg to setfork: must be data or rsrc";
+	      Tcl_SetResult(interp, "bad arg to setfork: must be data or rsrc", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -362,7 +395,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	  if (offset == -1)
 	    return error(interp, 0);
 
-	  sprintf(interp->result, "%lu", offset);
+	  resultf(interp, "%lu", offset);
 	}
       else if (strcmp(argv[1], "read") == 0)
 	{
@@ -374,7 +407,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 
 	  if (bytes < 0)
 	    {
-	      interp->result = "size must be >= 0";
+	      Tcl_SetResult(interp, "size must be >= 0", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -399,7 +432,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	  if (bytes == -1)
 	    return error(interp, 0);
 
-	  sprintf(interp->result, "%lu", bytes);
+	  resultf(interp, "%lu", bytes);
 	}
       else
 	{
@@ -428,7 +461,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	    whence = HFS_SEEK_END;
 	  else
 	    {
-	      interp->result = "bad arg 3: must be start, current, or end";
+	      Tcl_SetResult(interp, "bad arg 3: must be start, current, or end", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -436,7 +469,7 @@ int file_cmd(ClientData clientData, Tcl_Interp *interp,
 	  if (offset == -1)
 	    return error(interp, 0);
 
-	  sprintf(interp->result, "%lu", offset);
+	  resultf(interp, "%lu", offset);
 	}
       else
 	{
@@ -486,6 +519,7 @@ int fork_native(Tcl_Interp *interp, hfsfile *ifile, hfsfile *ofile)
 /*
  * NAME:	file->ref()
  * DESCRIPTION:	called to initialize a new file reference
+ * NOTE:        Sets interpreter result to the new command name
  */
 static
 void file_ref(Tcl_Interp *interp, volref *vref, fileref *fref, hfsfile *file)
@@ -495,17 +529,18 @@ void file_ref(Tcl_Interp *interp, volref *vref, fileref *fref, hfsfile *file)
   Tcl_HashEntry *entry;
   int new;
 
+  char buf[sizeof("hfsfile") + sizeof(int) * 3];
   do
-    sprintf(interp->result, "hfsfile%d", id++);
-  while (Tcl_GetCommandInfo(interp, interp->result, &info));
+    snprintf(buf, sizeof(buf), "hfsfile%d", id++);
+  while (Tcl_GetCommandInfo(interp, buf, &info));
 
   fref->file   = file;
   fref->interp = interp;
-  fref->cmd    = Tcl_CreateCommand(interp, interp->result,
-				   file_cmd, fref, file_del);
+  fref->cmd    = Tcl_CreateCommand(interp, buf, file_cmd, fref, file_del);
 
   entry = Tcl_CreateHashEntry(&files, (char *) fref, &new);
   Tcl_SetHashValue(entry, vref);
+  Tcl_SetResult(interp, buf, TCL_VOLATILE);
 }
 
 /*
@@ -612,7 +647,7 @@ int copynative(Tcl_Interp *interp, volref *srcvref, const char *argv[])
   if (srcvref->vol == dstvref->vol &&
       ent.cnid == cnid)
     {
-      interp->result = "source and destination files are the same";
+      Tcl_SetResult(interp, "source and destination files are the same", TCL_STATIC);
       hfs_close(ifile);
       return TCL_ERROR;
     }
@@ -666,7 +701,7 @@ int copyin(Tcl_Interp *interp, hfsvol *vol, const char *argv[])
     copyfile = cpi_raw;
   else
     {
-      interp->result = "bad mode: must be macb, binh, text, or raw";
+      Tcl_SetResult(interp, "bad mode: must be macb, binh, text, or raw", TCL_STATIC);
       return TCL_ERROR;
     }
 
@@ -701,7 +736,7 @@ int copyout(Tcl_Interp *interp, hfsvol *vol, const char *argv[])
     copyfile = cpo_raw;
   else
     {
-      interp->result = "bad mode: must be macb, binh, text, or raw";
+      Tcl_SetResult(interp, "bad mode: must be macb, binh, text, or raw", TCL_STATIC);
       return TCL_ERROR;
     }
 
@@ -815,7 +850,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
   switch (argc)
     {
     case 1:
-      interp->result = "missing command";
+      Tcl_SetResult(interp, "missing command", TCL_STATIC);
       return TCL_ERROR;
 
     case 2:
@@ -831,21 +866,21 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	  hfsvolent ent;
 
 	  hfs_vstat(vol, &ent);
-	  sprintf(interp->result, "%lu %lu", ent.totbytes, ent.freebytes);
+	  resultf(interp, "%lu %lu", ent.totbytes, ent.freebytes);
 	}
       else if (strcmp(argv[1], "crdate") == 0)
 	{
 	  hfsvolent ent;
 
 	  hfs_vstat(vol, &ent);
-	  sprintf(interp->result, "%ld", (long) ent.crdate);
+	  resultf(interp, "%ld", (long) ent.crdate);
 	}
       else if (strcmp(argv[1], "mddate") == 0)
 	{
 	  hfsvolent ent;
 
 	  hfs_vstat(vol, &ent);
-	  sprintf(interp->result, "%ld", (long) ent.mddate);
+	  resultf(interp, "%ld", (long) ent.mddate);
 	}
       else if (strcmp(argv[1], "islocked") == 0)
 	{
@@ -853,9 +888,9 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 
 	  hfs_vstat(vol, &ent);
 	  if (ent.flags & HFS_ISLOCKED)
-	    interp->result = "1";
+	    Tcl_SetResult(interp, "1", TCL_STATIC);
 	  else
-	    interp->result = "0";
+	    Tcl_SetResult(interp, "0", TCL_STATIC);
 	}
       else if (strcmp(argv[1], "umount") == 0)
 	{
@@ -864,7 +899,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	    return error(interp, 0);
 	}
       else if (strcmp(argv[1], "cwd") == 0)
-	sprintf(interp->result, "%lu", vref->cwd);
+	resultf(interp, "%lu", vref->cwd);
       else if (strcmp(argv[1], "path") == 0)
 	{
 	  char name[HFS_MAX_FLEN + 1];
@@ -884,7 +919,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 
 	  /* reverse the resulting list */
 
-	  if (Tcl_SplitList(interp, interp->result, &listc, &listv) != TCL_OK)
+	  if (Tcl_SplitList(interp, Tcl_GetStringResult(interp), &listc, &listv) != TCL_OK)
 	    return TCL_ERROR;
 
 	  for (i = 0; i < listc / 2; ++i)
@@ -897,7 +932,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	    }
 
 	  result = Tcl_Merge(listc, listv);
-	  Tcl_Free(listv);
+	  Tcl_Free((char*)listv);
 
 	  Tcl_SetResult(interp, result, TCL_DYNAMIC);
 	}
@@ -912,7 +947,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	    return error(interp, 0);
 	}
       else if (strcmp(argv[1], "sepchar") == 0)
-	interp->result = ":";
+	Tcl_SetResult(interp, ":", TCL_STATIC);
       else
 	{
 	  Tcl_AppendResult(interp, "bad command \"", argv[1],
@@ -959,7 +994,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	  fref = ALLOC(fileref, 1);
 	  if (fref == 0)
 	    {
-	      interp->result = "out of memory";
+	      Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -984,7 +1019,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	  str = direntstr(&ent);
 	  if (str == 0)
 	    {
-	      interp->result = "out of memory";
+	      Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -1038,7 +1073,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 
 	  if (fargv == 0)
 	    {
-	      interp->result = "globbing error";
+	      Tcl_SetResult(interp, "globbing error", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -1094,14 +1129,14 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	  if (strlen(argv[3]) != 4 ||
 	      strlen(argv[4]) != 4)
 	    {
-	      interp->result = "type and creator must be 4 character strings";
+	      Tcl_SetResult(interp, "type and creator must be 4 character strings", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
 	  fref = ALLOC(fileref, 1);
 	  if (fref == 0)
 	    {
-	      interp->result = "out of memory";
+	      Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -1159,7 +1194,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
   if (argc < 2)
     {
-      interp->result = "wrong # args";
+      Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
       return TCL_ERROR;
     }
 
@@ -1174,7 +1209,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (argc < 3 || argc > 4)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1193,7 +1228,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
 	  if (nparts > 1)
 	    {
-	      sprintf(interp->result, "must specify partition number "
+	      resultf(interp, "must specify partition number "
 		      "(%d available)", nparts);
 	      return TCL_ERROR;
 	    }
@@ -1206,7 +1241,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
       vref = ALLOC(volref, 1);
       if (vref == 0)
 	{
-	  interp->result = "out of memory";
+	  Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1226,12 +1261,13 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       entry = Tcl_CreateHashEntry(&volumes, (char *) vref, &new);
 
+      char buf[sizeof("hfsvol") + sizeof(int) * 3];
       do
-	sprintf(interp->result, "hfsvol%d", id++);
-      while (Tcl_GetCommandInfo(interp, interp->result, &info));
+	snprintf(buf, sizeof(buf), "hfsvol%d", id++);
+      while (Tcl_GetCommandInfo(interp, buf, &info));
 
-      Tcl_CreateCommand(interp, interp->result,
-			vol_cmd, vref, vol_del);
+      Tcl_CreateCommand(interp, buf, vol_cmd, vref, vol_del);
+      Tcl_SetResult(interp, buf, TCL_VOLATILE);
     }
   else if (strcmp(argv[1], "zero") == 0)
     {
@@ -1240,7 +1276,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (argc != 4)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1250,7 +1286,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
       if (do_zero(argv[2], nparts, &len) == -1)
 	return error(interp, 0);
 
-      sprintf(interp->result, "%lu", len);
+      resultf(interp, "%lu", len);
     }
   else if (strcmp(argv[1], "mkpart") == 0)
     {
@@ -1258,7 +1294,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (argc != 4)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1274,7 +1310,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (argc != 3)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1282,7 +1318,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
       nparts = hfs_nparts(argv[2]);
       suid_disable();
 
-      sprintf(interp->result, "%d", nparts);
+      resultf(interp, "%d", nparts);
     }
   else if (strcmp(argv[1], "format") == 0)
     {
@@ -1290,7 +1326,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (argc < 5 || argc > 6)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1311,7 +1347,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 	    {
 	      Tcl_Free((void*)listv);
 
-	      interp->result = "out of memory";
+	      Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	      return TCL_ERROR;
 	    }
 
@@ -1352,7 +1388,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (argc != 5)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1361,8 +1397,8 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 	  (strcmp(argv[3], "latin1") != 0 &&
 	   strcmp(argv[3], "macroman") != 0))
 	{
-	  interp->result = "bad arg to chartrans: "
-	    "charsets must be one of latin1, macroman";
+	  Tcl_SetResult(interp, "bad arg to chartrans: "
+	    "charsets must be one of latin1, macroman", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1380,7 +1416,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 
       if (result == 0)
 	{
-	  interp->result = "out of memory";
+	  Tcl_SetResult(interp, "out of memory", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
@@ -1394,41 +1430,41 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
     {
       if (argc != 2)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
-      interp->result = (char *) hfsutils_version;
+      Tcl_SetResult(interp, (char *)hfsutils_version, TCL_STATIC);
     }
   else if (strcmp(argv[1], "copyright") == 0)
     {
       if (argc != 2)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
-      interp->result = (char *) hfsutils_copyright;
+      Tcl_SetResult(interp, (char *)hfsutils_copyright, TCL_STATIC);
     }
   else if (strcmp(argv[1], "author") == 0)
     {
       if (argc != 2)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
-      interp->result = (char *) hfsutils_author;
+      Tcl_SetResult(interp, (char *)hfsutils_author, TCL_STATIC);
     }
   else if (strcmp(argv[1], "license") == 0)
     {
       if (argc != 2)
 	{
-	  interp->result = "wrong # args";
+	  Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	  return TCL_ERROR;
 	}
 
-      interp->result = (char *) hfsutils_license;
+      Tcl_SetResult(interp, (char *)hfsutils_license, TCL_STATIC);
     }
   else
     {
@@ -1455,7 +1491,7 @@ int cmd_exit(ClientData clientData, Tcl_Interp *interp,
 
   if (argc > 2)
     {
-      interp->result = "wrong # args: should be \"exit ?returnCode?\"";
+      Tcl_SetResult(interp, "wrong # args: should be \"exit ?returnCode?\"", TCL_STATIC);
       return TCL_ERROR;
     }
 
