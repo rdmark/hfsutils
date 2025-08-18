@@ -1042,8 +1042,8 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	      return TCL_ERROR;
 	    }
 
-	  Tcl_Free(fargv);
 	  result = Tcl_Merge(fargc, (const char**)fargv);
+	  free(fargv);
 
 	  Tcl_SetResult(interp, result, TCL_DYNAMIC);
 	}
