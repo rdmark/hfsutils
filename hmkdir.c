@@ -35,7 +35,7 @@
  * NAME:	hmkdir->main()
  * DESCRIPTION:	implement hmkdir command
  */
-int hmkdir_main(int argc, char *argv[])
+int hmkdir_main(int argc, const char *argv[])
 {
   hfsvol *vol;
   char **fargv;

@@ -252,7 +252,7 @@ int usage(void)
  * NAME:	hcopy->main()
  * DESCRIPTION:	implement hcopy command
  */
-int hcopy_main(int argc, char *argv[])
+int hcopy_main(int argc, const char *argv[])
 {
   int nargs, mode = 'a', result = 0;
   const char *target;
@@ -265,7 +265,7 @@ int hcopy_main(int argc, char *argv[])
     {
       int opt;
 
-      opt = getopt(argc, argv, "mbtra");
+      opt = getopt(argc, (char**)argv, "mbtra");
       if (opt == EOF)
 	break;
 
@@ -294,7 +294,7 @@ int hcopy_main(int argc, char *argv[])
 
       copy  = do_copyin;
       fargc = nargs - 1;
-      fargv = &argv[optind];
+      fargv = (char**)&argv[optind];
     }
   else
     {
@@ -311,7 +311,7 @@ int hcopy_main(int argc, char *argv[])
 
   hfsutil_unmount(vol, &result);
 
-  if (fargv && fargv != &argv[optind])
+  if (fargv && fargv != (char**)&argv[optind])
     free(fargv);
 
   return result;

@@ -32,7 +32,7 @@ hfsvol *hfsutil_remount(mountent *, int);
 void hfsutil_unmount(hfsvol *, int *);
 
 void hfsutil_pinfo(hfsvolent *);
-char **hfsutil_glob(hfsvol *, int, char *[], int *, int *);
+char **hfsutil_glob(hfsvol *, int, const char *[], int *, int *);
 char *hfsutil_getcwd(hfsvol *);
 
 int hfsutil_samepath(const char *, const char *);

@@ -19,4 +19,4 @@
  * $Id: hdel.h,v 1.6 1998/04/11 08:26:57 rob Exp $
  */
 
-int hdel_main(int, char *[]);
+int hdel_main(int, const char *[]);

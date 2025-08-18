@@ -828,7 +828,7 @@ int queuepath(hfsvol *vol, char *path, darray *dirs, darray *files, int flags)
  * NAME:	hls->main()
  * DESCRIPTION:	implement hls command
  */
-int hls_main(int argc, char *argv[])
+int hls_main(int argc, const char *argv[])
 {
   hfsvol *vol;
   int fargc, i;
@@ -871,7 +871,7 @@ int hls_main(int argc, char *argv[])
     {
       int opt;
 
-      opt = getopt(argc, argv, "1abcdfilmqrstxw:CFNQRSU");
+      opt = getopt(argc, (char**)argv, "1abcdfilmqrstxw:CFNQRSU");
       if (opt == EOF)
 	break;
 

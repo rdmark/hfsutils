@@ -19,4 +19,4 @@
  * $Id: hmount.h,v 1.7 1998/04/11 08:26:59 rob Exp $
  */
 
-int hmount_main(int, char *[]);
+int hmount_main(int, const char *[]);

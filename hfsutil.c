@@ -64,14 +64,14 @@ const char *argv0, *bargv0;
  * NAME:	main()
  * DESCRIPTION:	program entry dispatch
  */
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
   int i, len;
   const char *dot;
 
   struct {
     const char *name;
-    int (*func)(int, char *[]);
+    int (*func)(int, const char *[]);
   } list[] = {
     { "hattrib", hattrib_main },
     { "hcd",     hcd_main     },
@@ -254,7 +254,7 @@ void hfsutil_pinfo(hfsvolent *ent)
  * NAME:	hfsutil->glob()
  * DESCRIPTION:	perform filename globbing
  */
-char **hfsutil_glob(hfsvol *vol, int argc, char *argv[],
+char **hfsutil_glob(hfsvol *vol, int argc, const char *argv[],
 		    int *nelts, int *result)
 {
   char **fargv;
@@ -276,7 +276,7 @@ char **hfsutil_glob(hfsvol *vol, int argc, char *argv[],
 char *hfsutil_getcwd(hfsvol *vol)
 {
   char *path, name[HFS_MAX_FLEN + 1 + 1];
-  long cwd;
+  unsigned long cwd;
   int pathlen;
 
   path    = malloc(1);

@@ -51,7 +51,7 @@ int usage(void)
  * NAME:	hattrib->main()
  * DESCRIPTION:	implement hattrib command
  */
-int hattrib_main(int argc, char *argv[])
+int hattrib_main(int argc, const char *argv[])
 {
   const char *type = 0, *crea = 0;
   int invis = 0, lock = 0, bless = 0;

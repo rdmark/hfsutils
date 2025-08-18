@@ -35,7 +35,7 @@
  * NAME:	hrmdir->main()
  * DESCRIPTION:	implement hrmdir command
  */
-int hrmdir_main(int argc, char *argv[])
+int hrmdir_main(int argc, const char *argv[])
 {
   hfsvol *vol;
   char **fargv;

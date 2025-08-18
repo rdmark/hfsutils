@@ -19,4 +19,4 @@
  * $Id: hrmdir.h,v 1.6 1998/04/11 08:26:59 rob Exp $
  */
 
-int hrmdir_main(int, char *[]);
+int hrmdir_main(int, const char *[]);

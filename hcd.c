@@ -36,7 +36,7 @@
  * NAME:	hcd->main()
  * DESCRIPTION:	implement hcd command
  */
-int hcd_main(int argc, char *argv[])
+int hcd_main(int argc, const char *argv[])
 {
   mountent *ment;
   hfsvol *vol;

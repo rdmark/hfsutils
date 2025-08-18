@@ -336,7 +336,7 @@ int doglob(hfsvol *vol, dlist *list, const char *dir, const char *rem)
  * NAME:	hfs->glob()
  * DESCRIPTION:	perform glob pattern matching
  */
-char **hfs_glob(hfsvol *vol, int argc, char *argv[], int *nelts)
+char **hfs_glob(hfsvol *vol, int argc, const char *argv[], int *nelts)
 {
   dlist list;
   int i;

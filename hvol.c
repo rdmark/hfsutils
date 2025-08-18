@@ -64,7 +64,7 @@ int showvol(mountent *ment)
  * NAME:	hvol->main()
  * DESCRIPTION:	implement hvol command
  */
-int hvol_main(int argc, char *argv[])
+int hvol_main(int argc, const char *argv[])
 {
   int vnum;
   mountent *ment;

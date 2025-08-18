@@ -35,7 +35,7 @@
  * NAME:	hdel->main()
  * DESCRIPTION:	implement hdel command
  */
-int hdel_main(int argc, char *argv[])
+int hdel_main(int argc, const char *argv[])
 {
   hfsvol *vol;
   int fargc;

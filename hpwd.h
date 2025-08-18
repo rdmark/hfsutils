@@ -19,4 +19,4 @@
  * $Id: hpwd.h,v 1.7 1998/04/11 08:26:59 rob Exp $
  */
 
-int hpwd_main(int, char *[]);
+int hpwd_main(int, const char *[]);

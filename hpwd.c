@@ -35,7 +35,7 @@
  * NAME:	hpwd->main()
  * DESCRIPTION:	implement hpwd command
  */
-int hpwd_main(int argc, char *argv[])
+int hpwd_main(int argc, const char *argv[])
 {
   mountent *ent;
 

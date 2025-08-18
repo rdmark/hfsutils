@@ -19,4 +19,4 @@
  * $Id: hformat.h,v 1.7 1998/04/11 08:26:57 rob Exp $
  */
 
-int hformat_main(int, char *[]);
+int hformat_main(int, const char *[]);

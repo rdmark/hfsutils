@@ -19,4 +19,4 @@
  * $Id: hrename.h,v 1.6 1998/04/11 08:26:59 rob Exp $
  */
 
-int hrename_main(int, char *[]);
+int hrename_main(int, const char *[]);

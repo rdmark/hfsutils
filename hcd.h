@@ -19,4 +19,4 @@
  * $Id: hcd.h,v 1.7 1998/04/11 08:26:56 rob Exp $
  */
 
-int hcd_main(int, char *[]);
+int hcd_main(int, const char *[]);

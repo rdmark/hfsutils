@@ -119,7 +119,7 @@ char *direntstr(hfsdirent *ent)
     mddate[CHARLEN(long) + 1],
     bkdate[CHARLEN(long) + 1];
   register int argc;
-  char *argv[24];
+  const char *argv[24];
   int locked, invis;
 
   argc = 0;
@@ -275,7 +275,7 @@ void file_del(ClientData clientData)
  */
 static
 int file_cmd(ClientData clientData, Tcl_Interp *interp,
-	     int argc, char *argv[])
+	     int argc, const char *argv[])
 {
   fileref *fref = clientData;
   hfsfile *file = fref->file;
@@ -541,7 +541,7 @@ int do_copynative(Tcl_Interp *interp, hfsfile *ifile, hfsfile *ofile)
  * DESCRIPTION:	copy an HFS file to another HFS volume
  */
 static
-int copynative(Tcl_Interp *interp, volref *srcvref, char *argv[])
+int copynative(Tcl_Interp *interp, volref *srcvref, const char *argv[])
 {
   volref *dstvref;
   Tcl_CmdInfo info;
@@ -649,7 +649,7 @@ int copynative(Tcl_Interp *interp, volref *srcvref, char *argv[])
  * DESCRIPTION:	copy a UNIX file into an HFS volume
  */
 static
-int copyin(Tcl_Interp *interp, hfsvol *vol, char *argv[])
+int copyin(Tcl_Interp *interp, hfsvol *vol, const char *argv[])
 {
   cpifunc copyfile;
 
@@ -684,7 +684,7 @@ int copyin(Tcl_Interp *interp, hfsvol *vol, char *argv[])
  * DESCRIPTION:	copy an HFS file out to a UNIX file
  */
 static
-int copyout(Tcl_Interp *interp, hfsvol *vol, char *argv[])
+int copyout(Tcl_Interp *interp, hfsvol *vol, const char *argv[])
 {
   cpofunc copyfile;
 
@@ -807,7 +807,7 @@ void vol_del(ClientData clientData)
  */
 static
 int vol_cmd(ClientData clientData, Tcl_Interp *interp,
-	    int argc, char *argv[])
+	    int argc, const char *argv[])
 {
   volref *vref = clientData;
   hfsvol *vol  = vref->vol;
@@ -868,9 +868,9 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
       else if (strcmp(argv[1], "path") == 0)
 	{
 	  char name[HFS_MAX_FLEN + 1];
-	  long id;
+	  unsigned long id;
 	  int listc, i;
-	  char **listv;
+	  const char **listv;
 	  char *result;
 
 	  id = vref->cwd;
@@ -889,7 +889,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 
 	  for (i = 0; i < listc / 2; ++i)
 	    {
-	      char *tmp;
+	      const char *tmp;
 
 	      tmp = listv[i];
 	      listv[i] = listv[listc - 1 - i];
@@ -933,7 +933,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	}
       else if (strcmp(argv[1], "dirinfo") == 0)
 	{
-	  long id;
+	  unsigned long id;
 	  char name[HFS_MAX_FLEN + 1], idstr[CHARLEN(unsigned long) + 1];
 
 	  if (Tcl_ExprLong(interp, argv[2], &id) != TCL_OK)
@@ -1024,7 +1024,8 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
       else if (strcmp(argv[1], "glob") == 0)
 	{
 	  int listc, fargc;
-	  char **listv, **fargv, *result;
+	  const char **listv;
+	  char  **fargv, *result;
 
 	  if (hfs_setcwd(vol, vref->cwd) == -1)
 	    return error(interp, 0);
@@ -1033,7 +1034,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	    return TCL_ERROR;
 
 	  fargv = hfs_glob(vol, listc, listv, &fargc);
-	  Tcl_Free(listv);
+	  Tcl_Free((void*)listv);
 
 	  if (fargv == 0)
 	    {
@@ -1041,8 +1042,8 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	      return TCL_ERROR;
 	    }
 
-	  result = Tcl_Merge(fargc, fargv);
 	  Tcl_Free(fargv);
+	  result = Tcl_Merge(fargc, (const char**)fargv);
 
 	  Tcl_SetResult(interp, result, TCL_DYNAMIC);
 	}
@@ -1152,7 +1153,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
  */
 static
 int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
-	    int argc, char *argv[])
+	    int argc, const char *argv[])
 {
   static int id = 0;
 
@@ -1299,7 +1300,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
       if (argc == 6)
 	{
 	  int listc, i;
-	  char **listv;
+	  const char **listv;
 	  unsigned long *badblocks;
 
 	  if (Tcl_SplitList(interp, argv[5], &listc, &listv) != TCL_OK)
@@ -1308,7 +1309,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 	  badblocks = ALLOCX(unsigned long, listc);
 	  if (listc && badblocks == 0)
 	    {
-	      Tcl_Free(listv);
+	      Tcl_Free((void*)listv);
 
 	      interp->result = "out of memory";
 	      return TCL_ERROR;
@@ -1319,13 +1320,13 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 	      if (Tcl_ExprLong(interp, listv[i],
 			       (long *) &badblocks[i]) != TCL_OK)
 		{
-		  Tcl_Free(listv);
+		  Tcl_Free((void*)listv);
 		  FREE(badblocks);
 		  return TCL_ERROR;
 		}
 	    }
 
-	  Tcl_Free(listv);
+	  Tcl_Free((void*)listv);
 
 	  if (do_format(argv[2], partno, 0, argv[4], listc, badblocks) == -1)
 	    {
@@ -1373,7 +1374,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
 	result = cs_latin1(argv[4], 0);
       else
 	{
-	  Tcl_SetResult(interp, argv[4], TCL_VOLATILE);
+	  Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[4], -1));
 	  return TCL_OK;
 	}
 
@@ -1448,7 +1449,7 @@ int cmd_hfs(ClientData clientData, Tcl_Interp *interp,
  */
 static
 int cmd_exit(ClientData clientData, Tcl_Interp *interp,
-	     int argc, char *argv[])
+	     int argc, const char *argv[])
 {
   int status = 0;
 
@@ -1477,8 +1478,8 @@ int Hfs_Init(Tcl_Interp *interp)
   Tcl_InitHashTable(&volumes, TCL_ONE_WORD_KEYS);
   Tcl_InitHashTable(&files,   TCL_ONE_WORD_KEYS);
 
-  Tcl_CreateCommand(interp, "hfs",   cmd_hfs,   0, 0);
-  Tcl_CreateCommand(interp, "exit",  cmd_exit,  0, 0);
+  Tcl_CreateCommand(interp, "hfs",   cmd_hfs,   NULL, NULL);
+  Tcl_CreateCommand(interp, "exit",  cmd_exit,  NULL, NULL);
 
   return TCL_OK;
 }

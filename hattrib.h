@@ -19,4 +19,4 @@
  * $Id: hattrib.h,v 1.6 1998/04/11 08:26:56 rob Exp $
  */
 
-int hattrib_main(int, char *[]);
+int hattrib_main(int, const char *[]);

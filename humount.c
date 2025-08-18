@@ -35,7 +35,7 @@
  * NAME:	humount->main()
  * DESCRIPTION:	implement humount command
  */
-int humount_main(int argc, char *argv[])
+int humount_main(int argc, const char *argv[])
 {
   int vnum;
   mountent *ent;

@@ -19,4 +19,4 @@
  * $Id: hvol.h,v 1.7 1998/04/11 08:27:00 rob Exp $
  */
 
-int hvol_main(int, char *[]);
+int hvol_main(int, const char *[]);

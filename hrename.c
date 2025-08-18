@@ -67,7 +67,7 @@ int do_rename(hfsvol *vol, int argc, char *argv[], const char *dest)
  * NAME:	hrename->main()
  * DESCRIPTION:	implement hrename command
  */
-int hrename_main(int argc, char *argv[])
+int hrename_main(int argc, const char *argv[])
 {
   mountent *ment;
   hfsvol *vol;

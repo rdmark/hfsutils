@@ -36,7 +36,7 @@
  * NAME:	hmount->main()
  * DESCRIPTION:	implement hmount command
  */
-int hmount_main(int argc, char *argv[])
+int hmount_main(int argc, const char *argv[])
 {
   char *path = 0;
   hfsvol *vol;

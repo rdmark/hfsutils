@@ -19,4 +19,4 @@
  * $Id: hcopy.h,v 1.6 1998/04/11 08:26:56 rob Exp $
  */
 
-int hcopy_main(int, char *[]);
+int hcopy_main(int, const char *[]);

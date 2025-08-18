@@ -19,4 +19,4 @@
  * $Id: hls.h,v 1.6 1998/04/11 08:26:58 rob Exp $
  */
 
-int hls_main(int, char *[]);
+int hls_main(int, const char *[]);

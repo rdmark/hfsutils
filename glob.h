@@ -19,4 +19,4 @@
  * $Id: glob.h,v 1.6 1998/04/11 08:26:55 rob Exp $
  */
 
-char **hfs_glob(hfsvol *, int, char *[], int *);
+char **hfs_glob(hfsvol *, int, const char *[], int *);

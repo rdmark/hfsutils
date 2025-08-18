@@ -75,7 +75,7 @@ hfsvol *do_format(const char *path, int partno, int mode, const char *vname)
  * NAME:	hformat->main()
  * DESCRIPTION:	implement hformat command
  */
-int hformat_main(int argc, char *argv[])
+int hformat_main(int argc, const char *argv[])
 {
   const char *vname;
   char *path = 0;
@@ -89,7 +89,7 @@ int hformat_main(int argc, char *argv[])
     {
       int opt;
 
-      opt = getopt(argc, argv, "fl:");
+      opt = getopt(argc, (char**)argv, "fl:");
       if (opt == EOF)
 	break;
 

@@ -21,7 +21,7 @@
 
 typedef unsigned short UCS2;
 
-UCS2 *cs_unicode(char *, int *);
+UCS2 *cs_unicode(const char *, int *);
 
-char *cs_latin1(char *, int *);
-char *cs_macroman(char *, int *);
+char *cs_latin1(const char *, int *);
+char *cs_macroman(const char *, int *);

@@ -127,7 +127,7 @@ char *latin1_subst[128] = {
  * NAME:	charset->unicode()
  * DESCRIPTION:	return a Unicode string for MacOS Standard Roman
  */
-UCS2 *cs_unicode(char *mstr, int *lenptr)
+UCS2 *cs_unicode(const char *mstr, int *lenptr)
 {
   int len, i;
   UCS2 *unicode, *ptr;
@@ -151,7 +151,7 @@ UCS2 *cs_unicode(char *mstr, int *lenptr)
  * NAME:	charset->latin1()
  * DESCRIPTION:	return a Latin-1 (ISO 8859-1) string for MacOS Standard Roman
  */
-char *cs_latin1(char *mstr, int *lenptr)
+char *cs_latin1(const char *mstr, int *lenptr)
 {
   int ilen, olen, i;
   char *latin1, *ptr;
@@ -229,7 +229,7 @@ void mktable(void)
  * NAME:	charset->macroman()
  * DESCRIPTION:	return a MacOS Standard Roman string for Latin-1 (ISO 8859-1)
  */
-char *cs_macroman(char *lstr, int *lenptr)
+char *cs_macroman(const char *lstr, int *lenptr)
 {
   int ilen, olen, i;
   char *macroman, *ptr;

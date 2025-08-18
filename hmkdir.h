@@ -19,4 +19,4 @@
  * $Id: hmkdir.h,v 1.6 1998/04/11 08:26:58 rob Exp $
  */
 
-int hmkdir_main(int, char *[]);
+int hmkdir_main(int, const char *[]);
