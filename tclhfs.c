@@ -1033,7 +1033,7 @@ int vol_cmd(ClientData clientData, Tcl_Interp *interp,
 	    return TCL_ERROR;
 
 	  fargv = hfs_glob(vol, listc, listv, &fargc);
-	  free(listv);
+	  Tcl_Free(listv);
 
 	  if (fargv == 0)
 	    {
